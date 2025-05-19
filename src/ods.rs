@@ -8,10 +8,10 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::io::{BufReader, Read, Seek};
 
-use quick_xml::events::attributes::Attributes;
-use quick_xml::events::Event;
-use quick_xml::name::QName;
 use quick_xml::Reader as XmlReader;
+use quick_xml::events::Event;
+use quick_xml::events::attributes::Attributes;
+use quick_xml::name::QName;
 use zip::read::{ZipArchive, ZipFile};
 use zip::result::ZipError;
 
@@ -275,7 +275,7 @@ fn check_for_password_protected<RS: Read + Seek>(zip: &mut ZipArchive<RS>) -> Re
                         Ok(Event::Start(ref e))
                             if e.name() == QName(b"manifest:encryption-data") =>
                         {
-                            return Err(OdsError::Password)
+                            return Err(OdsError::Password);
                         }
                         Ok(Event::Eof) => break,
                         Err(e) => return Err(OdsError::Xml(e)),
@@ -590,7 +590,7 @@ where
             Ok(e) => {
                 return Err(OdsError::Mismatch {
                     expected: "table-cell",
-                    found: format!("{:?}", e),
+                    found: format!("{e:?}"),
                 });
             }
         }
@@ -751,7 +751,7 @@ where
             Ok(e) => {
                 return Err(OdsError::Mismatch {
                     expected: "table:named-expressions",
-                    found: format!("{:?}", e),
+                    found: format!("{e:?}"),
                 });
             }
         }

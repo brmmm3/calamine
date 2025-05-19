@@ -9,15 +9,15 @@ use std::io::{BufReader, Read, Seek};
 use log::debug;
 
 use encoding_rs::UTF_16LE;
-use quick_xml::events::attributes::Attribute;
-use quick_xml::events::Event;
-use quick_xml::name::QName;
 use quick_xml::Reader as XmlReader;
+use quick_xml::events::Event;
+use quick_xml::events::attributes::Attribute;
+use quick_xml::name::QName;
 use zip::read::{ZipArchive, ZipFile};
 use zip::result::ZipError;
 
 use crate::datatype::DataRef;
-use crate::formats::{builtin_format_by_code, detect_custom_number_format, CellFormat};
+use crate::formats::{CellFormat, builtin_format_by_code, detect_custom_number_format};
 use crate::utils::{push_column, read_f64, read_i32, read_u16, read_u32, read_usize};
 use crate::vba::VbaProject;
 use crate::{
@@ -327,7 +327,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                                 return Err(XlsbError::Unrecognized {
                                     typ: "BoundSheet8:hsState",
                                     val: v.to_string(),
-                                })
+                                });
                             }
                         };
                         let typ = match path.split('/').nth(1) {
@@ -338,7 +338,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                                 return Err(XlsbError::Unrecognized {
                                     typ: "BoundSheet8:dt",
                                     val: path.to_string(),
-                                })
+                                });
                             }
                         };
                         let name = wide_str(&buf[12 + rel_len..len], &mut 0)?;
@@ -399,7 +399,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                     self.metadata.names = defined_names;
                     return Ok(());
                 }
-                _ => debug!("Unsupported type {:X}", typ),
+                _ => debug!("Unsupported type {typ:X}"),
             }
         }
     }
@@ -589,7 +589,7 @@ impl<RS: Read + Seek> ReaderRef<RS> for Xlsb<RS> {
 
                 // If `header_row` is set and the first non-empty cell is not at the `header_row`, we add
                 // an empty cell at the beginning with row `header_row` and same column as the first non-empty cell.
-                if cells.first().map_or(false, |c| c.pos.0 != header_row_idx) {
+                if cells.first().is_some_and(|c| c.pos.0 != header_row_idx) {
                     cells.insert(
                         0,
                         Cell {
@@ -958,7 +958,7 @@ fn parse_formula(
                 if rgce[5] & 0x40 != 0x40 {
                     formula.push('$');
                 }
-                formula.push_str(&format!("{}", row));
+                formula.push_str(&format!("{row}"));
                 rgce = &rgce[6..];
             }
             0x25 | 0x45 | 0x65 => {

@@ -1,6 +1,6 @@
 use serde::de::value::BorrowedStrDeserializer;
 use serde::de::{self, DeserializeOwned, DeserializeSeed, SeqAccess, Visitor};
-use serde::{forward_to_deserialize_any, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, forward_to_deserialize_any};
 use std::marker::PhantomData;
 use std::{fmt, slice, str};
 
@@ -42,19 +42,18 @@ impl fmt::Display for DeError {
                 ref min_pos,
             } => write!(
                 f,
-                "there is no cell at position '{:?}'.Minimum position is '{:?}'",
-                try_pos, min_pos
+                "there is no cell at position '{try_pos:?}'.Minimum position is '{min_pos:?}'"
             ),
             DeError::CellError { ref pos, ref err } => {
-                write!(f, "Cell error at position '{:?}': {}", pos, err)
+                write!(f, "Cell error at position '{pos:?}': {err}")
             }
             DeError::UnexpectedEndOfRow { ref pos } => {
-                write!(f, "Unexpected end of row at position '{:?}'", pos)
+                write!(f, "Unexpected end of row at position '{pos:?}'")
             }
             DeError::HeaderNotFound(ref header) => {
-                write!(f, "Cannot find header named '{}'", header)
+                write!(f, "Cannot find header named '{header}'")
             }
-            DeError::Custom(ref s) => write!(f, "{}", s),
+            DeError::Custom(ref s) => write!(f, "{s}"),
         }
     }
 }
@@ -602,13 +601,13 @@ macro_rules! deserialize_num {
             match self.data_type {
                 Data::Float(v) => visitor.$visit(*v as $typ),
                 Data::Int(v) => visitor.$visit(*v as $typ),
-                Data::String(ref s) => {
+                Data::String(s) => {
                     let v = s.parse().map_err(|_| {
                         DeError::Custom(format!("Expecting {}, got '{}'", stringify!($typ), s))
                     })?;
                     visitor.$visit(v)
                 }
-                Data::Error(ref err) => Err(DeError::CellError {
+                Data::Error(err) => Err(DeError::CellError {
                     err: err.clone(),
                     pos: self.pos,
                 }),
@@ -644,7 +643,7 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
             Data::DateTime(v) => visitor.visit_f64(v.as_f64()),
             Data::DateTimeIso(v) => visitor.visit_str(v),
             Data::DurationIso(v) => visitor.visit_str(v),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
@@ -664,7 +663,7 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
             Data::DateTime(v) => visitor.visit_str(&v.to_string()),
             Data::DateTimeIso(v) => visitor.visit_str(v),
             Data::DurationIso(v) => visitor.visit_str(v),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
@@ -678,11 +677,11 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
         match self.data_type {
             Data::String(v) => visitor.visit_bytes(v.as_bytes()),
             Data::Empty => visitor.visit_bytes(&[]),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
-            ref d => Err(DeError::Custom(format!("Expecting bytes, got {:?}", d))),
+            ref d => Err(DeError::Custom(format!("Expecting bytes, got {d:?}"))),
         }
     }
 
@@ -706,10 +705,10 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
     {
         match self.data_type {
             Data::Bool(v) => visitor.visit_bool(*v),
-            Data::String(ref v) => match &**v {
+            Data::String(v) => match &**v {
                 "TRUE" | "true" | "True" => visitor.visit_bool(true),
                 "FALSE" | "false" | "False" => visitor.visit_bool(false),
-                d => Err(DeError::Custom(format!("Expecting bool, got '{}'", d))),
+                d => Err(DeError::Custom(format!("Expecting bool, got '{d}'"))),
             },
             Data::Empty => visitor.visit_bool(false),
             Data::Float(v) => visitor.visit_bool(*v != 0.),
@@ -717,7 +716,7 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
             Data::DateTime(v) => visitor.visit_bool(v.as_f64() != 0.),
             Data::DateTimeIso(_) => visitor.visit_bool(true),
             Data::DurationIso(_) => visitor.visit_bool(true),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
@@ -729,14 +728,14 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
         V: Visitor<'de>,
     {
         match self.data_type {
-            Data::String(ref s) if s.len() == 1 => {
+            Data::String(s) if s.len() == 1 => {
                 visitor.visit_char(s.chars().next().expect("s not empty"))
             }
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
-            ref d => Err(DeError::Custom(format!("Expecting unit, got {:?}", d))),
+            ref d => Err(DeError::Custom(format!("Expecting unit, got {d:?}"))),
         }
     }
 
@@ -746,11 +745,11 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
     {
         match self.data_type {
             Data::Empty => visitor.visit_unit(),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
-            ref d => Err(DeError::Custom(format!("Expecting unit, got {:?}", d))),
+            ref d => Err(DeError::Custom(format!("Expecting unit, got {d:?}"))),
         }
     }
 
@@ -788,11 +787,11 @@ impl<'a, 'de> serde::Deserializer<'de> for DataDeserializer<'a> {
 
         match self.data_type {
             Data::String(s) => visitor.visit_enum(s.as_str().into_deserializer()),
-            Data::Error(ref err) => Err(DeError::CellError {
+            Data::Error(err) => Err(DeError::CellError {
                 err: err.clone(),
                 pos: self.pos,
             }),
-            ref d => Err(DeError::Custom(format!("Expecting enum, got {:?}", d))),
+            ref d => Err(DeError::Custom(format!("Expecting enum, got {d:?}"))),
         }
     }
 

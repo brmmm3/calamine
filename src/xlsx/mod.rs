@@ -7,15 +7,15 @@ use std::io::{Read, Seek};
 use std::str::FromStr;
 
 use log::warn;
-use quick_xml::events::attributes::{Attribute, Attributes};
-use quick_xml::events::Event;
-use quick_xml::name::QName;
 use quick_xml::Reader as XmlReader;
+use quick_xml::events::Event;
+use quick_xml::events::attributes::{Attribute, Attributes};
+use quick_xml::name::QName;
 use zip::read::{ZipArchive, ZipFile};
 use zip::result::ZipError;
 
 use crate::datatype::DataRef;
-use crate::formats::{builtin_format_by_id, detect_custom_number_format, CellFormat};
+use crate::formats::{CellFormat, builtin_format_by_id, detect_custom_number_format};
 use crate::vba::VbaProject;
 use crate::{
     Cell, CellErrorType, Data, Dimensions, HeaderRow, Metadata, Range, Reader, ReaderRef, Sheet,
@@ -359,7 +359,7 @@ impl<RS: Read + Seek> Xlsx<RS> {
                                         return Err(XlsxError::Unrecognized {
                                             typ: "sheet:state",
                                             val: v.to_string(),
-                                        })
+                                        });
                                     }
                                 }
                             }
@@ -381,7 +381,7 @@ impl<RS: Read + Seek> Xlsx<RS> {
                                 } else if r.starts_with("xl/") {
                                     r.to_string()
                                 } else {
-                                    format!("xl/{}", r)
+                                    format!("xl/{r}")
                                 };
                             }
                             _ => (),
@@ -395,7 +395,7 @@ impl<RS: Read + Seek> Xlsx<RS> {
                             return Err(XlsxError::Unrecognized {
                                 typ: "sheet:type",
                                 val: path.to_string(),
-                            })
+                            });
                         }
                     };
                     self.metadata.sheets.push(Sheet {
@@ -492,7 +492,7 @@ impl<RS: Read + Seek> Xlsx<RS> {
         for (sheet_name, sheet_path) in &self.sheets {
             let last_folder_index = sheet_path.rfind('/').expect("should be in a folder");
             let (base_folder, file_name) = sheet_path.split_at(last_folder_index);
-            let rel_path = format!("{}/_rels{}.rels", base_folder, file_name);
+            let rel_path = format!("{base_folder}/_rels{file_name}.rels");
 
             let mut table_locations = Vec::new();
             let mut buf = Vec::with_capacity(64);
@@ -541,7 +541,7 @@ impl<RS: Read + Seek> Xlsx<RS> {
                             }
                         }
                         Ok(Event::End(ref e)) if e.local_name().as_ref() == b"Relationships" => {
-                            break
+                            break;
                         }
                         Ok(Event::Eof) => return Err(XlsxError::XmlEof("Relationships")),
                         Err(e) => return Err(XlsxError::Xml(e)),
@@ -1073,7 +1073,7 @@ impl<RS: Read + Seek> ReaderRef<RS> for Xlsx<RS> {
 
                 // If `header_row` is set and the first non-empty cell is not at the `header_row`, we add
                 // an empty cell at the beginning with row `header_row` and same column as the first non-empty cell.
-                if cells.first().map_or(false, |c| c.pos.0 != header_row_idx) {
+                if cells.first().is_some_and(|c| c.pos.0 != header_row_idx) {
                     cells.insert(
                         0,
                         Cell {
@@ -1152,16 +1152,10 @@ pub(crate) fn get_dimension(dimension: &[u8]) -> Result<Dimensions, XlsxError> {
             let rows = parts[1].0 - parts[0].0;
             let columns = parts[1].1 - parts[0].1;
             if rows > MAX_ROWS {
-                warn!(
-                    "xlsx has more than maximum number of rows ({} > {})",
-                    rows, MAX_ROWS
-                );
+                warn!("xlsx has more than maximum number of rows ({rows} > {MAX_ROWS})");
             }
             if columns > MAX_COLUMNS {
-                warn!(
-                    "xlsx has more than maximum number of columns ({} > {})",
-                    columns, MAX_COLUMNS
-                );
+                warn!("xlsx has more than maximum number of columns ({columns} > {MAX_COLUMNS})");
             }
             Ok(Dimensions {
                 start: parts[0],
@@ -1427,8 +1421,8 @@ pub(crate) fn coordinate_to_name(cell: (u32, u32)) -> Result<Vec<u8>, XlsxError>
 mod tests {
     use super::*;
     use std::io::Write;
-    use zip::write::SimpleFileOptions;
     use zip::ZipWriter;
+    use zip::write::SimpleFileOptions;
 
     #[test]
     fn test_dimensions() {

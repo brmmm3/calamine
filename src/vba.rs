@@ -8,7 +8,7 @@ use std::io::Read;
 use std::path::PathBuf;
 
 use byteorder::{LittleEndian, ReadBytesExt};
-use log::{debug, log_enabled, warn, Level};
+use log::{Level, debug, log_enabled, warn};
 
 use crate::cfb::{Cfb, XlsEncoding};
 use crate::utils::read_u16;
@@ -47,16 +47,15 @@ from_err!(std::io::Error, VbaError, Io);
 impl std::fmt::Display for VbaError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            VbaError::Io(e) => write!(f, "I/O error: {}", e),
-            VbaError::Cfb(e) => write!(f, "Cfb error: {}", e),
+            VbaError::Io(e) => write!(f, "I/O error: {e}"),
+            VbaError::Cfb(e) => write!(f, "Cfb error: {e}"),
 
-            VbaError::ModuleNotFound(e) => write!(f, "Cannot find module '{}'", e),
-            VbaError::Unknown { typ, val } => write!(f, "Unknown {} '{:X}'", typ, val),
+            VbaError::ModuleNotFound(e) => write!(f, "Cannot find module '{e}'"),
+            VbaError::Unknown { typ, val } => write!(f, "Unknown {typ} '{val:X}'"),
             VbaError::LibId => write!(f, "Unexpected libid format"),
             VbaError::InvalidRecordId { expected, found } => write!(
                 f,
-                "Invalid record id: expecting {:X} found {:X}",
-                expected, found
+                "Invalid record id: expecting {expected:X} found {found:X}"
             ),
         }
     }
@@ -157,7 +156,7 @@ impl VbaProject {
     /// }
     /// ```
     pub fn get_module(&self, name: &str) -> Result<String, VbaError> {
-        debug!("read module {}", name);
+        debug!("read module {name}");
         let data = self.get_module_raw(name)?;
         Ok(self.encoding.decode_all(data))
     }
@@ -281,8 +280,7 @@ impl Reference {
                 }
             }
         }
-
-        debug!("references: {:#?}", references);
+        debug!("references: {references:#?}");
         Ok(references)
     }
 
@@ -434,8 +432,7 @@ fn check_variable_record<'a>(id: u16, r: &mut &'a [u8]) -> Result<&'a [u8], VbaE
     let record = read_variable_record(r, 1)?;
     if log_enabled!(Level::Warn) && record.len() > 100_000 {
         warn!(
-            "record id {} as a suspicious huge length of {} (hex: {:x})",
-            id,
+            "record id {id} as a suspicious huge length of {} (hex: {:x})",
             record.len(),
             record.len() as u32
         );
@@ -445,7 +442,7 @@ fn check_variable_record<'a>(id: u16, r: &mut &'a [u8]) -> Result<&'a [u8], VbaE
 
 /// Check that next record matches `id`
 fn check_record(id: u16, r: &mut &[u8]) -> Result<(), VbaError> {
-    debug!("check record {:x}", id);
+    debug!("check record {id:x}");
     let record_id = r.read_u16::<LittleEndian>()?;
     if record_id != id {
         Err(VbaError::InvalidRecordId {
