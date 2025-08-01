@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 use serde::de::value::BorrowedStrDeserializer;
 use serde::de::{self, DeserializeOwned, DeserializeSeed, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, forward_to_deserialize_any};
@@ -42,7 +46,7 @@ impl fmt::Display for DeError {
                 ref min_pos,
             } => write!(
                 f,
-                "there is no cell at position '{try_pos:?}'.Minimum position is '{min_pos:?}'"
+                "there is no cell at position '{try_pos:?}'. Minimum position is '{min_pos:?}'"
             ),
             DeError::CellError { ref pos, ref err } => {
                 write!(f, "Cell error at position '{pos:?}': {err}")

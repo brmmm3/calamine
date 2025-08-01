@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 mod cells_reader;
 
 pub use cells_reader::XlsbCellsReader;
@@ -9,15 +13,15 @@ use std::io::{BufReader, Read, Seek};
 use log::debug;
 
 use encoding_rs::UTF_16LE;
-use quick_xml::Reader as XmlReader;
-use quick_xml::events::Event;
 use quick_xml::events::attributes::Attribute;
+use quick_xml::events::Event;
 use quick_xml::name::QName;
+use quick_xml::Reader as XmlReader;
 use zip::read::{ZipArchive, ZipFile};
 use zip::result::ZipError;
 
 use crate::datatype::DataRef;
-use crate::formats::{CellFormat, builtin_format_by_code, detect_custom_number_format};
+use crate::formats::{builtin_format_by_code, detect_custom_number_format, CellFormat};
 use crate::utils::{push_column, read_f64, read_i32, read_u16, read_u32, read_usize};
 use crate::vba::VbaProject;
 use crate::{
@@ -56,7 +60,7 @@ pub enum XlsbError {
     Etpg(u8),
     /// Unsupported iftab
     IfTab(usize),
-    /// Unsupported BErr
+    /// Unsupported `BErr`
     BErr(u8),
     /// Unsupported Ptg
     Ptg(u8),
@@ -327,7 +331,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                                 return Err(XlsbError::Unrecognized {
                                     typ: "BoundSheet8:hsState",
                                     val: v.to_string(),
-                                });
+                                })
                             }
                         };
                         let typ = match path.split('/').nth(1) {
@@ -338,7 +342,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                                 return Err(XlsbError::Unrecognized {
                                     typ: "BoundSheet8:dt",
                                     val: path.to_string(),
-                                });
+                                })
                             }
                         };
                         let name = wide_str(&buf[12 + rel_len..len], &mut 0)?;
@@ -348,7 +352,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
                             visible,
                         });
                         self.sheets.push((name.into_owned(), path));
-                    };
+                    }
                 }
                 0x0090 => break, // BrtEndBundleShs
                 _ => (),
@@ -431,7 +435,7 @@ impl<RS: Read + Seek> Xlsb<RS> {
             let mut zfile = self.zip.by_index(i)?;
             let zname = zfile.name();
             if zname.starts_with("xl/media") {
-                if let Some(ext) = zname.split('.').last() {
+                if let Some(ext) = zname.split('.').next_back() {
                     if [
                         "emf", "wmf", "pict", "jpeg", "jpg", "png", "dib", "gif", "tiff", "eps",
                         "bmp", "wpg",
@@ -621,7 +625,9 @@ where
     RS: Read + Seek,
 {
     fn from_zip(zip: &'a mut ZipArchive<RS>, path: &str) -> Result<RecordIter<'a, RS>, XlsbError> {
-        match zip.by_name(path) {
+        let zip_path = crate::xlsx::path_to_zip_path(zip, path);
+
+        match zip.by_name(&zip_path) {
             Ok(f) => Ok(RecordIter {
                 r: BufReader::new(f),
                 b: [0],
@@ -1026,7 +1032,7 @@ fn check_for_password_protected<RS: Read + Seek>(reader: &mut RS) -> Result<(), 
         if cfb.has_directory("EncryptedPackage") {
             return Err(XlsbError::Password);
         }
-    };
+    }
 
     Ok(())
 }

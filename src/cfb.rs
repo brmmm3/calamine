@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 //! Compound File Binary format MS-CFB
 
 use std::borrow::Cow;
@@ -6,7 +10,7 @@ use std::io::Read;
 
 use log::debug;
 
-use encoding_rs::{Encoding, UTF_8, UTF_16LE};
+use encoding_rs::{Encoding, UTF_16LE, UTF_8};
 
 use crate::utils::*;
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 //! A module to convert file extension to reader
 
 use crate::errors::Error;
@@ -155,10 +159,10 @@ where
     #[cfg(feature = "picture")]
     fn pictures(&self) -> Option<Vec<(String, Vec<u8>)>> {
         match self {
-            Sheets::Xls(e) => e.pictures(),
-            Sheets::Xlsx(e) => e.pictures(),
-            Sheets::Xlsb(e) => e.pictures(),
-            Sheets::Ods(e) => e.pictures(),
+            Sheets::Xls(ref e) => e.pictures(),
+            Sheets::Xlsx(ref e) => e.pictures(),
+            Sheets::Xlsb(ref e) => e.pictures(),
+            Sheets::Ods(ref e) => e.pictures(),
         }
     }
 }

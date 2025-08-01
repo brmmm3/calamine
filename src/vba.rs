@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 //! Parse vbaProject.bin file
 //!
-//! Retranscription from:
-//! https://github.com/unixfreak0037/officeparser/blob/master/officeparser.py
+//! Retranscription from [`OfficeParser`].
+//!
+//! [`OfficeParser`]: https://github.com/unixfreak0037/officeparser/blob/master/officeparser.py
 
 use std::collections::BTreeMap;
 use std::io::Read;
 use std::path::PathBuf;
 
 use byteorder::{LittleEndian, ReadBytesExt};
-use log::{Level, debug, log_enabled, warn};
+use log::{debug, log_enabled, warn, Level};
 
 use crate::cfb::{Cfb, XlsEncoding};
 use crate::utils::read_u16;
@@ -149,9 +154,9 @@ impl VbaProject {
     ///     let modules = vba.get_module_names().into_iter()
     ///                      .map(|s| s.to_string()).collect::<Vec<_>>();
     ///     for m in modules {
-    ///         println!("Module {}:", m);
+    ///         println!("Module {m}:");
     ///         println!("{}", vba.get_module(&m)
-    ///                           .expect(&format!("cannot read {:?} module", m)));
+    ///                           .unwrap_or_else(|_| panic!("cannot read {m:?} module")));
     ///     }
     /// }
     /// ```
@@ -187,7 +192,7 @@ impl Reference {
         !self.path.exists()
     }
 
-    /// Gets the list of references from the dir_stream relevant part
+    /// Gets the list of references from the `dir_stream` relevant part
     fn from_stream(stream: &mut &[u8], encoding: &XlsEncoding) -> Result<Vec<Reference>, VbaError> {
         debug!("read all references metadata");
 
@@ -280,6 +285,7 @@ impl Reference {
                 }
             }
         }
+
         debug!("references: {references:#?}");
         Ok(references)
     }
@@ -418,7 +424,7 @@ fn read_modules(stream: &mut &[u8], encoding: &XlsEncoding) -> Result<Vec<Module
 
 /// Reads a variable length record
 ///
-/// `mult` is a multiplier of the length (e.g 2 when parsing XLWideString)
+/// `mult` is a multiplier of the length (e.g 2 when parsing `XLWideString`)
 fn read_variable_record<'a>(r: &mut &'a [u8], mult: usize) -> Result<&'a [u8], VbaError> {
     let len = r.read_u32::<LittleEndian>()? as usize * mult;
     let (read, next) = r.split_at(len);
@@ -432,7 +438,8 @@ fn check_variable_record<'a>(id: u16, r: &mut &'a [u8]) -> Result<&'a [u8], VbaE
     let record = read_variable_record(r, 1)?;
     if log_enabled!(Level::Warn) && record.len() > 100_000 {
         warn!(
-            "record id {id} as a suspicious huge length of {} (hex: {:x})",
+            "record id {} as a suspicious huge length of {} (hex: {:x})",
+            id,
             record.len(),
             record.len() as u32
         );

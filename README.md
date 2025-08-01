@@ -15,7 +15,6 @@ An Excel/OpenDocument Spreadsheets file reader/deserializer, in pure Rust.
 - opendocument spreadsheets (`ods`)
 
 As long as your files are *simple enough*, this library should just work.
-For anything else, please file an issue with a failing test or send a pull request!
 
 ## Examples
 
@@ -364,7 +363,7 @@ When asking one of the maintainers of `excelize`, I got this [response](https://
 
 ![bytes_to_disk](https://github.com/RoloEdits/calamine/assets/12489689/befa9893-7658-41a7-8cbd-b0ce5a7d9341)
 
-As seen in the previous section, `excelize` is writting to disk to save memory. The others don't employ that kind of mechanism.
+As seen in the previous section, `excelize` is writing to disk to save memory. The others don't employ that kind of mechanism.
 
 #### Memory
 
@@ -384,18 +383,18 @@ Very noisy chart, but `excelize`'s spikes must be from the GC?
 
 ## Unsupported
 
-Many (most) part of the specifications are not implemented, the focus has been put on reading cell **values** and **vba** code.
+Many (most) parts of the specifications are not implemented, the focus has been put on reading cell **values** and **vba** code.
 
 The main unsupported items are:
 
 - no support for writing excel files, this is a read-only library
-- no support for reading extra contents, such as formatting, excel parameter, encrypted components etc ...
+- no support for reading extra content, such as formatting, excel parameter, encrypted components etc ...
 - no support for reading VB for opendocuments
 
 ## Credits
 
 Thanks to [xlsx-js](https://github.com/SheetJS/js-xlsx) developers!
-This library is by far the simplest open source implementation I could find and helps making sense out of official documentation.
+This library is by far the simplest open source implementation I could find and helps making sense out of the official documentation.
 
 Thanks also to all the contributors!
 

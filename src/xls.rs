@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 use std::borrow::Cow;
 use std::cmp::min;
 use std::collections::BTreeMap;
@@ -9,8 +13,8 @@ use log::debug;
 
 use crate::cfb::{Cfb, XlsEncoding};
 use crate::formats::{
-    CellFormat, builtin_format_by_code, detect_custom_number_format, format_excel_f64,
-    format_excel_i64,
+    builtin_format_by_code, detect_custom_number_format, format_excel_f64, format_excel_i64,
+    CellFormat,
 };
 #[cfg(feature = "picture")]
 use crate::utils::read_usize;
@@ -172,7 +176,7 @@ impl<RS: Read + Seek> Xls<RS> {
     /// ```
     /// use calamine::{Xls,XlsOptions};
     /// # use std::io::Cursor;
-    /// # const BYTES: &'static [u8] = b"";
+    /// # const BYTES: &[u8] = b"";
     ///
     /// # fn run() -> Result<Xls<Cursor<&'static [u8]>>, calamine::XlsError> {
     /// # let reader = std::io::Cursor::new(BYTES);
@@ -225,7 +229,7 @@ impl<RS: Read + Seek> Xls<RS> {
     }
 
     /// Get the nth worksheet. Shortcut for getting the nth
-    /// sheet_name, then the corresponding worksheet.
+    /// sheet name, then the corresponding worksheet.
     pub fn worksheet_merge_cells_at(&self, n: usize) -> Option<Vec<Dimensions>> {
         let sheet = self.metadata().sheets.get(n)?;
 
@@ -330,7 +334,7 @@ impl<RS: Read + Seek> Xls<RS> {
                     // CodePage
                     0x0042 => {
                         if self.options.force_codepage.is_none() {
-                            encoding = XlsEncoding::from_codepage(read_u16(r.data))?
+                            encoding = XlsEncoding::from_codepage(read_u16(r.data))?;
                         }
                     }
                     0x013D => {
@@ -341,7 +345,7 @@ impl<RS: Read + Seek> Xls<RS> {
                     // Date1904
                     0x0022 => {
                         if read_u16(r.data) == 1 {
-                            self.is_1904 = true
+                            self.is_1904 = true;
                         }
                     }
                     // 2.4.126 FORMATTING
@@ -450,12 +454,12 @@ impl<RS: Read + Seek> Xls<RS> {
                     }
                     //0x0201 => cells.push(parse_blank(r.data)?), // 513: Blank
                     0x0203 => cells.push(parse_number(r.data, &self.formats, self.is_1904)?), // 515: Number
-                    0x0204 => cells.extend(parse_label(r.data, &encoding, biff)?), // 516: Label [MS-XLS 2.4.148]
-                    0x0205 => cells.push(parse_bool_err(r.data)?),                 // 517: BoolErr
+                    0x0204 => cells.push(parse_label(r.data, &encoding, biff)?), // 516: Label [MS-XLS 2.4.148]
+                    0x0205 => cells.push(parse_bool_err(r.data)?),               // 517: BoolErr
                     0x0207 => {
                         // 519 String (formula value)
                         let val = Data::String(parse_string(r.data, &encoding, biff)?);
-                        cells.push(Cell::new(fmla_pos, val))
+                        cells.push(Cell::new(fmla_pos, val));
                     }
                     0x027E => cells.push(parse_rk(r.data, &self.formats, self.is_1904)?), // 638: Rk
                     0x00FD => cells.extend(parse_label_sst(r.data, &strings)?), // LabelSst
@@ -525,14 +529,14 @@ impl<RS: Read + Seek> Xls<RS> {
     }
 }
 
-/// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/4d6a3d1e-d7c5-405f-bbae-d01e9cb79366
+/// <https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/4d6a3d1e-d7c5-405f-bbae-d01e9cb79366>
 struct Bof {
     /// Binary Interchange File Format
     biff: Biff,
 }
 
-/// https://www.loc.gov/preservation/digital/formats/fdd/fdd000510.shtml#notes
-#[derive(Clone, Copy)]
+/// <https://www.loc.gov/preservation/digital/formats/fdd/fdd000510.shtml#notes>
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Biff {
     Biff2,
     Biff3,
@@ -550,7 +554,7 @@ fn parse_bof(r: &mut Record<'_>) -> Result<Bof, XlsError> {
 
     if r.data.len() >= 4 {
         dt = read_u16(&r.data[2..]);
-    };
+    }
 
     let biff = match biff_version {
         0x0200 | 0x0002 | 0x0007 => Biff::Biff2,
@@ -571,7 +575,7 @@ fn parse_bof(r: &mut Record<'_>) -> Result<Bof, XlsError> {
     Ok(Bof { biff })
 }
 
-/// BoundSheet8 [MS-XLS 2.4.28]
+/// `BoundSheet8` [MS-XLS 2.4.28]
 fn parse_sheet_metadata(
     r: &mut Record<'_>,
     encoding: &XlsEncoding,
@@ -692,7 +696,7 @@ fn parse_merge_cells(r: &[u8], merge_cells: &mut Vec<Dimensions>) -> Result<(), 
         merge_cells.push(Dimensions {
             start: (rf.into(), cf.into()),
             end: (rl.into(), cl.into()),
-        })
+        });
     }
 
     Ok(())
@@ -754,7 +758,7 @@ fn rk_num(rk: &[u8], formats: &[CellFormat], is_1904: bool) -> Data {
     }
 }
 
-/// ShortXLUnicodeString [MS-XLS 2.5.240]
+/// `ShortXLUnicodeString` [MS-XLS 2.5.240]
 fn parse_short_string(
     r: &mut Record<'_>,
     encoding: &XlsEncoding,
@@ -778,36 +782,37 @@ fn parse_short_string(
     }
 
     let mut s = String::with_capacity(cch);
-    let _ = encoding.decode_to(r.data, cch, &mut s, high_byte);
+    encoding.decode_to(r.data, cch, &mut s, high_byte);
     Ok(s)
 }
 
-/// XLUnicodeString [MS-XLS 2.5.294]
+/// `XLUnicodeString` [MS-XLS 2.5.294]
 fn parse_string(r: &[u8], encoding: &XlsEncoding, biff: Biff) -> Result<String, XlsError> {
-    if r.len() < 4 {
+    let (mut high_byte, expected) = match biff {
+        Biff::Biff2 | Biff::Biff3 | Biff::Biff4 | Biff::Biff5 => (None, 2),
+        _ => (Some(false), 3),
+    };
+    if r.len() < expected {
+        if 2 == r.len() && read_u16(r) == 0 {
+            // tests/OOM_alloc2.xls
+            return Ok(String::new());
+        }
         return Err(XlsError::Len {
             typ: "string",
-            expected: 4,
+            expected,
             found: r.len(),
         });
     }
+    // delay populating Some(_) variant until length checks guarantee r[2] can't crash
+    high_byte = high_byte.map(|_| r[2] & 0x1 != 0);
+
     let cch = read_u16(r) as usize;
-
-    let (high_byte, start) = match biff {
-        Biff::Biff2 | Biff::Biff3 | Biff::Biff4 | Biff::Biff5 => (None, 2),
-        _ => (Some(r[2] & 0x1 != 0), 3),
-    };
-
     let mut s = String::with_capacity(cch);
-    let _ = encoding.decode_to(&r[start..], cch, &mut s, high_byte);
+    encoding.decode_to(&r[expected..], cch, &mut s, high_byte);
     Ok(s)
 }
 
-fn parse_label(
-    r: &[u8],
-    encoding: &XlsEncoding,
-    biff: Biff,
-) -> Result<Option<Cell<Data>>, XlsError> {
+fn parse_label(r: &[u8], encoding: &XlsEncoding, biff: Biff) -> Result<Cell<Data>, XlsError> {
     if r.len() < 6 {
         return Err(XlsError::Len {
             typ: "label",
@@ -818,10 +823,10 @@ fn parse_label(
     let row = read_u16(r);
     let col = read_u16(&r[2..]);
     let _ixfe = read_u16(&r[4..]);
-    Ok(Some(Cell::new(
+    Ok(Cell::new(
         (row as u32, col as u32),
         Data::String(parse_string(&r[6..], encoding, biff)?),
-    )))
+    ))
 }
 
 fn parse_label_sst(r: &[u8], strings: &[String]) -> Result<Option<Cell<Data>>, XlsError> {
@@ -847,7 +852,7 @@ fn parse_label_sst(r: &[u8], strings: &[String]) -> Result<Option<Cell<Data>>, X
 }
 
 fn parse_dimensions(r: &[u8]) -> Result<Dimensions, XlsError> {
-    let (rf, rl, cf, cl) = match r.len() {
+    let (rf, rl, mut cf, cl) = match r.len() {
         10 => (
             read_u16(&r[0..2]) as u32,
             read_u16(&r[2..4]) as u32,
@@ -868,6 +873,12 @@ fn parse_dimensions(r: &[u8]) -> Result<Dimensions, XlsError> {
             });
         }
     };
+    // 2.5.53 ColU must be <= 0xFF, if larger, reasonable to assume
+    // starts at 0
+    // tests/OOM_alloc2.xls
+    if 0xFF < cf || cl < cf {
+        cf = 0;
+    }
     if 1 <= rl && 1 <= cl {
         Ok(Dimensions {
             start: (rf, cf),
@@ -901,7 +912,7 @@ fn parse_sst(r: &mut Record<'_>, encoding: &XlsEncoding) -> Result<Vec<String>, 
 
 /// Decode XF (extract only ifmt - Format identifier)
 ///
-/// See: https://learn.microsoft.com/ru-ru/openspecs/office_file_formats/ms-xls/993d15c4-ec04-43e9-ba36-594dfb336c6d
+/// See: <https://learn.microsoft.com/ru-ru/openspecs/office_file_formats/ms-xls/993d15c4-ec04-43e9-ba36-594dfb336c6d>
 fn parse_xf(r: &Record<'_>) -> Result<u16, XlsError> {
     if r.data.len() < 4 {
         return Err(XlsError::Len {
@@ -916,7 +927,7 @@ fn parse_xf(r: &Record<'_>) -> Result<u16, XlsError> {
 
 /// Decode Format
 ///
-/// See: https://learn.microsoft.com/ru-ru/openspecs/office_file_formats/ms-xls/300280fd-e4fe-4675-a924-4d383af48d3b
+/// See: <https://learn.microsoft.com/ru-ru/openspecs/office_file_formats/ms-xls/300280fd-e4fe-4675-a924-4d383af48d3b>
 /// 2.4.126
 fn parse_format(
     r: &mut Record<'_>,
@@ -940,7 +951,7 @@ fn parse_format(
     Ok((ifmt, detect_custom_number_format(&s)))
 }
 
-/// Decode XLUnicodeRichExtendedString.
+/// Decode `XLUnicodeRichExtendedString`.
 ///
 /// See: <https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/173d9f51-e5d3-43da-8de2-be7f22e119b9>
 fn read_rich_extended_string(
@@ -1151,7 +1162,7 @@ fn parse_defined_names(rgce: &[u8]) -> Result<(Option<usize>, String), XlsError>
 
 /// Formula parsing
 ///
-/// CellParsedFormula [MS-XLS 2.5.198.3]
+/// `CellParsedFormula` [MS-XLS 2.5.198.3]
 fn parse_formula(
     mut rgce: &[u8],
     sheets: &[String],
@@ -1474,7 +1485,7 @@ fn parse_formula(
     }
 }
 
-/// FormulaValue [MS-XLS 2.5.133]
+/// `FormulaValue` [MS-XLS 2.5.133]
 fn parse_formula_value(r: &[u8]) -> Result<Option<Data>, XlsError> {
     match *r {
         // String, value should be in next record
@@ -1628,4 +1639,15 @@ fn parse_pictures(stream: &[u8]) -> Result<Vec<(String, Vec<u8>)>, XlsError> {
         }
     }
     Ok(pics)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_string() {
+        let enc = XlsEncoding::from_codepage(1252).unwrap();
+        parse_string(&[0, 1], &enc, Biff::Biff8).unwrap_err();
+    }
 }

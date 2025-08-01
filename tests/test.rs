@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 use calamine::Data::{Bool, DateTime, DateTimeIso, DurationIso, Empty, Error, Float, Int, String};
-use calamine::{
-    open_workbook, open_workbook_auto, DataRef, DataType, Dimensions, ExcelDateTime,
-    ExcelDateTimeType, HeaderRow, Ods, Range, Reader, ReaderRef, Sheet, SheetType, SheetVisible,
-    Xls, Xlsb, Xlsx,
-};
 use calamine::{CellErrorType::*, Data};
+use calamine::{
+    DataRef, DataType, Dimensions, ExcelDateTime, ExcelDateTimeType, HeaderRow, Ods, Range, Reader,
+    ReaderRef, Sheet, SheetType, SheetVisible, Xls, Xlsb, Xlsx, open_workbook, open_workbook_auto,
+};
 use rstest::rstest;
 use std::collections::BTreeSet;
 use std::fs::File;
@@ -520,13 +523,12 @@ fn issue_127() {
     .collect();
 
     for ext in &["ods", "xls", "xlsx", "xlsb"] {
-        let p = format!("{}/tests/issue127.{}", root, ext);
+        let p = format!("{root}/tests/issue127.{ext}");
         let workbook = open_workbook_auto(&p).expect(&p);
         assert_eq!(
             workbook.sheet_names(),
             &ordered_names[..],
-            "{} sheets should be ordered",
-            ext
+            "{ext} sheets should be ordered"
         );
     }
 }
@@ -714,7 +716,7 @@ fn date_xls() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -749,7 +751,7 @@ fn date_xls_1904() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -784,7 +786,7 @@ fn date_xlsx() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -819,7 +821,7 @@ fn date_xlsx_1904() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -850,7 +852,7 @@ fn date_xlsx_iso() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
         assert_eq!(range.get_value((0, 0)).unwrap().as_time(), None);
         assert_eq!(range.get_value((0, 0)).unwrap().as_datetime(), None);
@@ -894,7 +896,7 @@ fn date_ods() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let time = chrono::NaiveTime::from_hms_opt(10, 10, 10).unwrap();
@@ -942,7 +944,7 @@ fn date_xlsb() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -977,7 +979,7 @@ fn date_xlsb_1904() {
 
     #[cfg(feature = "dates")]
     {
-        let date = chrono::NaiveDate::from_ymd_opt(2021, 01, 01).unwrap();
+        let date = chrono::NaiveDate::from_ymd_opt(2021, 1, 1).unwrap();
         assert_eq!(range.get_value((0, 0)).unwrap().as_date(), Some(date));
 
         let duration = chrono::Duration::seconds(255 * 60 * 60 + 10 * 60 + 10);
@@ -1281,8 +1283,8 @@ fn issue_271() -> Result<(), calamine::Error> {
     loop {
         let mut workbook: Xls<_> = wb("issue_271.xls");
         let v = workbook.worksheets();
-        let (_sheetname, range) = v.first().expect("bad format");
-        dbg!(_sheetname);
+        let (sheetname, range) = v.first().expect("bad format");
+        assert_eq!(sheetname, "sheet1");
         let value = range.get((0, 1)).map(|s| s.to_string());
         values.push(value);
         count += 1;
@@ -1291,12 +1293,10 @@ fn issue_271() -> Result<(), calamine::Error> {
         }
     }
 
-    dbg!(&values);
-
     values.sort_unstable();
     values.dedup();
 
-    assert_eq!(values.len(), 1);
+    assert_eq!(&values, &[Some("yyy_name".to_string())]);
 
     Ok(())
 }
@@ -1672,7 +1672,7 @@ fn issue_102() {
             open_workbook::<Xlsx<_>, std::string::String>(path),
             Err(calamine::XlsxError::Password)
         ),
-        "Is expeced to return XlsxError::Password error"
+        "Is expected to return XlsxError::Password error"
     );
 }
 
@@ -1699,7 +1699,7 @@ fn issue_385() {
             open_workbook::<Xls<_>, std::string::String>(path),
             Err(calamine::XlsError::Password)
         ),
-        "Is expeced to return XlsError::Password error"
+        "Is expected to return XlsError::Password error"
     );
 }
 
@@ -1711,7 +1711,7 @@ fn pass_protected_xlsb() {
             open_workbook::<Xlsb<_>, std::string::String>(path),
             Err(calamine::XlsbError::Password)
         ),
-        "Is expeced to return XlsbError::Password error"
+        "Is expected to return XlsbError::Password error"
     );
 }
 
@@ -1723,7 +1723,7 @@ fn pass_protected_ods() {
             open_workbook::<Ods<_>, std::string::String>(path),
             Err(calamine::OdsError::Password)
         ),
-        "Is expeced to return OdsError::Password error"
+        "Is expected to return OdsError::Password error"
     );
 }
 
@@ -1814,7 +1814,7 @@ fn issue_438_charts() {
 }
 
 #[test]
-fn isssue_444_memory_allocation() {
+fn issue_444_memory_allocation() {
     let mut excel: Xls<_> = wb("issue444.xls"); // should not fail
     let range = excel
         .worksheet_range("Sheet1")
@@ -1823,7 +1823,7 @@ fn isssue_444_memory_allocation() {
 }
 
 #[test]
-fn isssue_446_formulas() {
+fn issue_446_formulas() {
     let mut excel: Xlsx<_> = wb("issue446.xlsx");
     let _ = excel.worksheet_formula("Sheet1").unwrap(); // should not fail
 }
@@ -2142,4 +2142,46 @@ fn test_string_ref() {
 #[test]
 fn test_malformed_format() {
     let _xls: Xls<_> = wb("malformed_format.xls");
+}
+
+#[test]
+fn test_oom_allocation() {
+    let _xls: Xls<_> = wb("OOM_alloc.xls");
+    let mut xls: Xls<_> = wb("OOM_alloc2.xls");
+    let ws = xls.worksheets();
+    assert_eq!(ws.len(), 1);
+    assert_eq!(ws[0].0, "Colsale (Aug".to_string());
+}
+
+// Test for issue #419 where the part name is sentence case instead of camel
+// case. The test file contains a sub-file called "xl/SharedStrings.xml" (note
+// the uppercase S in Shared). This is allowed by "Office Open XML File Formats
+// — Open Packaging Conventions" 6.2.2.3.
+#[test]
+fn test_xlsx_case_insensitive_part_name() {
+    let mut xlsx: Xlsx<_> = wb("issue_419.xlsx");
+
+    let range = xlsx.worksheet_range("Sheet1").unwrap();
+    let expected_range = [[String("Hello".to_string())]];
+
+    range_eq!(range, expected_range);
+}
+
+// Test for issue #419 in Xlsb file. See the previous test for the details.
+#[test]
+fn test_xlsb_case_insensitive_part_name() {
+    let mut xlsb: Xlsb<_> = wb("issue_419.xlsb");
+
+    let range = xlsb.worksheet_range("Sheet1").unwrap();
+    let expected_range = [[String("Hello".to_string())]];
+
+    range_eq!(range, expected_range);
+}
+
+// Test for issue #530 where the part names in the xlsx file use a Windows-style
+// backslash. For example "xl\_rels\workbook.xml.rels" instead of
+// "xl/_rels/workbook.xml.rels".
+#[test]
+fn test_xlsx_backward_slash_part_name() {
+    let _: Xlsx<_> = wb("issue_530.xlsx");
 }

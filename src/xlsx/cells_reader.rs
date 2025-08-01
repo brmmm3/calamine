@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: MIT
+//
+// Copyright 2016-2025, Johann Tuffe.
+
 use quick_xml::{
-    events::{attributes::Attribute, BytesStart, Event},
+    events::{BytesStart, Event, attributes::Attribute},
     name::QName,
 };
 use std::{
@@ -9,13 +13,13 @@ use std::{
 };
 
 use super::{
-    get_attribute, get_dimension, get_row, get_row_column, read_string, replace_cell_names,
-    Dimensions, XlReader,
+    Dimensions, XlReader, get_attribute, get_dimension, get_row, get_row_column, read_string,
+    replace_cell_names,
 };
 use crate::{
-    datatype::DataRef,
-    formats::{format_excel_f64_ref, CellFormat},
     Cell, XlsxError,
+    datatype::DataRef,
+    formats::{CellFormat, format_excel_f64_ref},
 };
 
 type FormulaMap = HashMap<(u32, u32), (i64, i64)>;
@@ -140,7 +144,7 @@ where
                                     &mut self.xml,
                                     e,
                                     c_element,
-                                )?
+                                )?;
                             }
                             Ok(Event::End(ref e)) if e.local_name().as_ref() == b"c" => break,
                             Ok(Event::Eof) => return Err(XlsxError::XmlEof("c")),
@@ -222,7 +226,7 @@ where
                                     // shared reference
                                     match get_attribute(e.attributes(), QName(b"ref"))? {
                                         Some(res) => {
-                                            // orignal reference formula
+                                            // original reference formula
                                             let reference = get_dimension(res)?;
                                             if reference.start.0 != reference.end.0 {
                                                 for i in 0..=(reference.end.0 - reference.start.0) {
@@ -268,8 +272,8 @@ where
                                                 }
                                             }
                                         }
-                                    };
-                                };
+                                    }
+                                }
                             }
                             Ok(Event::End(ref e)) if e.local_name().as_ref() == b"c" => break,
                             Ok(Event::Eof) => return Err(XlsxError::XmlEof("c")),
